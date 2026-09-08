@@ -1,16 +1,28 @@
-// ============================================================
-//  PLTRS — TELEGRAM BOT WEBHOOK (Render.com)
-// ============================================================
-
 const express = require('express');
+const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Токен и Chat ID — потом заменишь на свои
-const BOT_TOKEN = '8451595343:AAFmxxaI9ltHhDAf4DJZ9SsU84nLZhpnKFc';
-const CHAT_ID = '140403762';
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const CHAT_ID = process.env.CHAT_ID;
+
+if (!BOT_TOKEN || !CHAT_ID) {
+    console.error('❌ BOT_TOKEN или CHAT_ID не заданы!');
+    process.exit(1);
+}
 
 app.use(express.json());
+
+// ===== CORS =====
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    res.header('Access-Control-Allow-Methods', 'POST');
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
 
 // ===== ОТПРАВКА В TELEGRAM =====
 app.post('/send', async (req, res) => {
@@ -21,32 +33,27 @@ app.post('/send', async (req, res) => {
             return res.status(400).json({ error: 'Missing text' });
         }
 
-        const response = await fetch(
+        const response = await axios.post(
             `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
             {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: CHAT_ID,
-                    parse_mode: 'HTML',
-                    text: text,
-                }),
+                chat_id: CHAT_ID,
+                parse_mode: 'HTML',
+                text: text,
             }
         );
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            return res.status(500).json({ error: data.description });
+        if (response.status === 200) {
+            res.json({ ok: true });
+        } else {
+            res.status(500).json({ error: 'Telegram API error' });
         }
-
-        res.json({ ok: true });
     } catch (error) {
+        console.error('Ошибка:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
-// ===== ПРОВЕРКА, ЧТО СЕРВЕР ЖИВ =====
+// ===== ПРОВЕРКА =====
 app.get('/', (req, res) => {
     res.send('✅ PLTRS bot is running!');
 });
