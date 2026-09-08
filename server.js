@@ -7,8 +7,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Токен и Chat ID — потом заменишь на свои
-const BOT_TOKEN = 'YOUR_BOT_TOKEN';
-const CHAT_ID = 'YOUR_CHAT_ID';
+const BOT_TOKEN = '8451595343:AAFmxxaI9ltHhDAf4DJZ9SsU84nLZhpnKFc';
+const CHAT_ID = '140403762';
 
 app.use(express.json());
 
