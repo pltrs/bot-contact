@@ -17,14 +17,14 @@ app.use(express.json());
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Content-Type');
-    res.header('Access-Control-Allow-Methods', 'POST');
+    res.header('Access-Control-Allow-Methods', 'POST, GET');
     if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
     }
     next();
 });
 
-// ===== ОТПРАВКА В TELEGRAM =====
+// ===== ОТПРАВКА В TELEGRAM (ЭТОТ ЭНДПОИНТ ТЕБЕ НУЖЕН) =====
 app.post('/send', async (req, res) => {
     try {
         const { text } = req.body;
@@ -53,9 +53,14 @@ app.post('/send', async (req, res) => {
     }
 });
 
-// ===== ПРОВЕРКА =====
+// ===== ПРОВЕРКА, ЧТО СЕРВЕР ЖИВ =====
 app.get('/', (req, res) => {
     res.send('✅ PLTRS bot is running!');
+});
+
+// ===== ПРОВЕРКА, ЧТО /send СУЩЕСТВУЕТ =====
+app.get('/send', (req, res) => {
+    res.send('✅ /send endpoint exists. Use POST to send messages.');
 });
 
 app.listen(PORT, () => {
