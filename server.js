@@ -3,6 +3,7 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Переменные окружения
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 
@@ -13,18 +14,18 @@ if (!BOT_TOKEN || !CHAT_ID) {
 
 app.use(express.json());
 
-// ===== CORS =====
+// CORS — чтобы твой сайт мог отправлять запросы
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Content-Type');
-    res.header('Access-Control-Allow-Methods', 'POST, GET');
+    res.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
     }
     next();
 });
 
-// ===== ОТПРАВКА В TELEGRAM (ЭТОТ ЭНДПОИНТ ТЕБЕ НУЖЕН) =====
+// ===== ОТПРАВКА В TELEGRAM =====
 app.post('/send', async (req, res) => {
     try {
         const { text } = req.body;
@@ -33,32 +34,41 @@ app.post('/send', async (req, res) => {
             return res.status(400).json({ error: 'Missing text' });
         }
 
-        const response = await axios.post(
-            `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
-            {
+        // Отправляем запрос в Telegram API
+        const response = await axios({
+            method: 'post',
+            url: `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            data: {
                 chat_id: CHAT_ID,
                 parse_mode: 'HTML',
                 text: text,
-            }
-        );
+            },
+        });
 
-        if (response.status === 200) {
+        // Если Telegram ответил успешно
+        if (response.status === 200 && response.data.ok) {
             res.json({ ok: true });
         } else {
             res.status(500).json({ error: 'Telegram API error' });
         }
     } catch (error) {
         console.error('Ошибка:', error.message);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            // Если есть подробности от Telegram, показываем их
+            details: error.response ? error.response.data : null,
+        });
     }
 });
 
-// ===== ПРОВЕРКА, ЧТО СЕРВЕР ЖИВ =====
+// ===== ПРОВЕРКА =====
 app.get('/', (req, res) => {
     res.send('✅ PLTRS bot is running!');
 });
 
-// ===== ПРОВЕРКА, ЧТО /send СУЩЕСТВУЕТ =====
 app.get('/send', (req, res) => {
     res.send('✅ /send endpoint exists. Use POST to send messages.');
 });
